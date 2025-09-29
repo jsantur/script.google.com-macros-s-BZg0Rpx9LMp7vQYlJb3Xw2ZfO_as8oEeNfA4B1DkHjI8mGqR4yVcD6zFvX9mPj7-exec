@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><script src="./jsapi"></script><script>window.parent.maeExportApis_();</script>
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Búsqueda de Certificados</title>
+  <link rel="icon" href="./favicon.ico" type="image/x-icon">
+  
+  <link href="./bootstrap.min.css" rel="stylesheet">
+  
+  <link rel="stylesheet" href="./all.min.css">
+
+  <style>
+     
+    body {
+      background: linear-gradient(to right, #003e72, #005ea6);
+      text-align: center;
+      font-family: Arial, sans-serif;
+    }
+
+     
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+      max-width: 800px;
+      margin: auto;
+      margin-top: 50px;
+    }
+
+     
+    h1 {
+      font-size: 28px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+     
+    .logo {
+      width: 150px;
+      margin-bottom: 20px;
+    }
+
+     
+    .btn-warning {
+      background-color: #fa630c !important;
+      border-color: #fa630c;
+      font-weight: bold;
+      width: 100%;
+    }
+
+     
+    .btn-print {
+      background-color: #28a745;
+      color: white;
+      font-weight: bold;
+      width: 100%;
+      display: none;  
+    }
+
+    .btn-print i {
+      margin-right: 5px;
+    }
+
+    .ansi-printer {
+      margin-right: 8px;
+      font-size: 18px;
+      vertical-align: middle;
+      display: inline-block;
+    }
+     
+    .table {
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+     
+    th {
+      background-color: #fa630c !important;
+      color: white !important;
+    }
+
+     
+    @media (max-width: 600px) {
+      .col-3, .col-6 {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+      .table-responsive {
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  
+  <div class="container text-center">
+    <img src="./campuscebyscertificado.png" alt="Logo" class="logo">
+    <h1>Verificación de Certificados</h1>
+    <p>Ingrese su número de DNI para verificar sus certificados.</p>
+
+    
+    <div class="row d-flex justify-content-center mb-3">
+      <div class="col-6 col-md-3">
+        <input
+          type="text"
+          class="form-control"
+          id="text-box-numero-dni"
+          placeholder="12345678"
+          inputmode="numeric"
+          pattern="\d*"
+          maxlength="8"
+          autocomplete="off"
+          autofocus
+        >
+      </div>
+      <div class="col-6 col-md-3">
+        <button type="submit" class="btn btn-warning" onclick="buscarCertificados()">Verificar</button>
+      </div>
+    </div>
+
+    
+    <div class="row d-flex justify-content-center mb-3">
+      <div class="col-6 col-md-3">
+        <input type="text" class="form-control" id="nombres" placeholder="Nombres" readonly="">
+      </div>
+      <div class="col-6 col-md-3">
+        <input type="text" class="form-control" id="apellidos" placeholder="Apellidos" readonly="">
+      </div>
+    </div>
+
+    
+    <div class="table-responsive">
+      <table id="certificadosTable" class="table table-striped">
+        <thead>
+          <tr>
+            <th>Formación</th>
+            <th>Horas Académicas</th>
+            <th>Fecha de emisión</th>
+            <th>N° Registro</th>
+          </tr>
+        </thead>
+        <tbody id="certificadosTableBody"></tbody>
+      </table>
+    </div>
+
+    
+    <button id="btnPrint" class="btn btn-print mt-3" onclick="window.print()">
+      <span class="ansi-printer" aria-hidden="true">🖨️</span> Imprimir
+    </button>
+  </div>
+
+  <template id="certificadosRow">
+    <!-- plantilla de fila utilizada por mostrarResultados -->
+    <tr>
+      <td class="certificadosFormacion"></td>
+      <td class="certificadosHorasAcademicas"></td>
+      <td class="certificadosFechaemision"></td>
+      <td class="certificadosRegistro"></td>
+    </tr>
+  </template>
+
+  <script>
+    // asegurar foco en el campo DNI después de cargar la página (y después de un reload)
+    window.addEventListener('DOMContentLoaded', () => {
+      const dniInput = document.getElementById('text-box-numero-dni');
+      if (dniInput) {
+        // focus y select para que el cursor esté listo y el contenido (si existe) quede seleccionado
+        dniInput.focus();
+        dniInput.select();
+
+        // función para limpiar y limitar a 8 dígitos
+        function sanitizeDniValue(el) {
+          el.value = el.value.replace(/\D/g, '').slice(0, 8);
+        }
+
+        // limpiar mientras el usuario escribe / pega
+        dniInput.addEventListener('input', (e) => sanitizeDniValue(e.target));
+
+        // prevenir ingreso de teclas no numéricas
+        dniInput.addEventListener('keydown', (e) => {
+          const allowedKeys = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Home', 'End'];
+          if (allowedKeys.includes(e.key)) return;
+          if (/^\d$/.test(e.key)) {
+            // si ya hay 8 caracteres, impedir más (si no hay selección)
+            if (dniInput.value.length >= 8 && (dniInput.selectionStart === dniInput.selectionEnd)) {
+              e.preventDefault();
+            }
+            return;
+          }
+          // permitir atajos (Ctrl/Cmd + C/V/X/A)
+          if (e.ctrlKey || e.metaKey) return;
+          e.preventDefault();
+        });
+
+        // manejar pegado: solo dígitos y máximo 8 en total
+        dniInput.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const paste = (e.clipboardData || window.clipboardData).getData('text') || '';
+          const digits = paste.replace(/\D/g, '');
+          const selStart = dniInput.selectionStart || 0;
+          const selEnd = dniInput.selectionEnd || 0;
+          const newVal = (dniInput.value.slice(0, selStart) + digits + dniInput.value.slice(selEnd)).replace(/\D/g, '').slice(0, 8);
+          dniInput.value = newVal;
+        });
+      }
+    });
+
+    function buscarCertificados() {
+      const numeroDNI = document.getElementById("text-box-numero-dni").value.trim();
+
+      // Datos locales para los dos DNIs solicitados
+      if (numeroDNI === "72909522") {
+        const info = [
+          [null, null, null, "Joseph", "Santur Mogollón", "OFIMÁTICA PROFESIONAL", "200", null, "11/09/2024", "0350-COP-2024/CADER"]
+        ];
+        mostrarResultados(info);
+        return;
+      }
+
+      if (numeroDNI === "74938664") {
+        const info = [
+          [null, null, null, "Hammer Slegde", "Herrera Panta", "OFIMÁTICA PROFESIONAL", "200", null, "11/09/2024", "0350-COP-2024/CADER"]
+        ];
+        mostrarResultados(info);
+        return;
+      }
+
+      // Si no es ninguno de los dos DNI, mostrar mensaje y refrescar la página
+      alert("No se encuentra en la base de datos.");
+      location.reload();
+    }
+
+    function mostrarResultados(info) {
+      let tableBody = document.getElementById("certificadosTableBody");
+      tableBody.innerHTML = "";
+
+      if (info && info.length > 0) {
+        document.getElementById("nombres").value = info[0][3];
+        document.getElementById("apellidos").value = info[0][4];
+
+        info.forEach(certificado => {
+          const template = document.getElementById("certificadosRow");
+          const tr = template.content.cloneNode(true);
+
+          tr.querySelector(".certificadosFormacion").textContent = certificado[5] || "";
+          tr.querySelector(".certificadosHorasAcademicas").textContent = certificado[6] || "";
+          tr.querySelector(".certificadosFechaemision").textContent = certificado[8] || "";
+          tr.querySelector(".certificadosRegistro").textContent = certificado[9] || "";
+
+          tableBody.appendChild(tr);
+        });
+
+        document.getElementById("btnPrint").style.display = "block";
+      } else {
+        alert("No se encontró el certificado.");
+        document.getElementById("btnPrint").style.display = "none";
+      }
+    }
+  </script>
+
+
+
+</body></html>

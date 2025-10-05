@@ -230,6 +230,15 @@
         return;
       }
 
+      // Entrada añadida: Cynthia Noemi Romero Palacios (DNI 43640132)
+      if (numeroDNI === "43640132") {
+        const info = [
+          [null, null, null, "Cynthia Noemi", "Romero Palacios", "OFIMÁTICA PROFESIONAL", "200", null, "11/09/2024", "0350-COP-2024/CADER"]
+        ];
+        mostrarResultados(info);
+        return;
+      }
+
       // Si no es ninguno de los dos DNI, mostrar mensaje y refrescar la página
       alert("No se encuentra en la base de datos.");
       location.reload();

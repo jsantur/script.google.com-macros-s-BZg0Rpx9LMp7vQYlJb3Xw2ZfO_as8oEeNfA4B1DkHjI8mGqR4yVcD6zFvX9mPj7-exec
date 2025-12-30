@@ -239,6 +239,15 @@
         return;
       }
 
+       // Entrada añadida: Nery Jazmin Cavero Moreno (DNI 77693214)
+      if (numeroDNI === "77693214") {
+        const info = [
+          [null, null, null, "Nery Jazmin", "Cavero Moreno", "OFIMÁTICA PROFESIONAL", "200", null, "11/09/2024", "0350-COP-2024/CADER"]
+        ];
+        mostrarResultados(info);
+        return;
+      }
+
       // Si no es ninguno de los dos DNI, mostrar mensaje y refrescar la página
       alert("No se encuentra en la base de datos.");
       location.reload();
